@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import EditPatientModal from "../components/EditPatientModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PersonalData() {
   const [personalData, setPersonalData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -19,10 +21,7 @@ export default function PersonalData() {
     setLoading(true);
     try {
       // User ID
-      const responseUser = await api.get("/Auth/me");
-      const userId = responseUser.data.userId;
-      const responseData = await api.get(`/Patients/GetPatient/${userId}`);
-
+      const responseData = await api.get(`/Patients/GetPatient/${user.userId}`);
       setPersonalData(responseData.data);
     } catch (error) {
       console.error(error);
