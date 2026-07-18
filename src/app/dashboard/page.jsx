@@ -1,62 +1,69 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+// Components
 import Sidebar from "../../components/Sidebar";
 import MyAppointmentsView from "../../components/MyAppointmentsView";
 import DoctorsView from "../../components/DoctorsView";
 import PersonalData from "../../components/PersonalData";
+import DoctorAppointmentsView from "@/components/DoctorAppointmentsView";
+import PatientsSearchView from "@/components/PatientsSearchView";
+// Auth context
+import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [activeView, setActiveView] = useState("my-appointments");
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  const { user, isLoadingAuth, logout } = useAuth();
+  const [activeView, setActiveView] = useState("");
 
   // Session verification
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-    } else {
-      setIsCheckingAuth(false);
+    if (!isLoadingAuth) {
+      if (!user) {
+        router.push("/login");
+      } else if (activeView === "") {
+        // View depending user role
+        if (user.role === "Patient") setActiveView("my-appointments");
+        if (user.role === "Doctor") setActiveView("doctor-appointments");
+        if (user.role === "Receptionist") setActiveView("all-appointments");
+      }
     }
-  }, [router]);
+  }, [user, isLoadingAuth, router, activeView]);
 
-  // Logout function
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
-
-  // Switch function for render the correct view
   const renderContent = () => {
     switch (activeView) {
+      // Patient view
       case "my-data":
         return <PersonalData />;
       case "my-appointments":
         return <MyAppointmentsView />;
       case "doctors":
         return <DoctorsView />;
-      default:
-        return <MyAppointmentsView />;
+      // Doctor view
+      case "doctor-appointments":
+        return <DoctorAppointmentsView />;
+      case "search-patients":
+        return <PatientsSearchView />;
     }
   };
 
   // Loading state while checking authentication
-  if (isCheckingAuth) {
+  if (isLoadingAuth || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="w-9 h-9 rounded-full border-[3px] border-slate-200 animate-spin border-t-sky-600" />
       </div>
     );
   }
-
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
       {/* Menu */}
       <Sidebar
         activeView={activeView}
         onChangeView={setActiveView}
-        onLogout={handleLogout}
+        onLogout={logout}
+        userRole={user.role}
       />
 
       {/* Content View */}
