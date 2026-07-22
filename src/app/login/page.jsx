@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../lib/api";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loadUser } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,8 +29,18 @@ export default function LoginPage() {
       const token = response.data.token;
       localStorage.setItem("token", token);
 
-      const userResponse = await api.get("/Auth/me");
-      const userRole = userResponse.data.role;
+      // Get user
+      const freshUser = await loadUser();
+
+      if (!freshUser) {
+        setStatusMessage({
+          type: "error",
+          message: "Error al cargar la información del usuario.",
+        });
+        return;
+      }
+
+      const userRole = freshUser.role;
 
       // Redirect based on user role
       switch (userRole) {
@@ -37,32 +49,34 @@ export default function LoginPage() {
           break;
 
         case "Doctor":
-          router.push("/doctor");
-          break;
-
         case "Patient":
+        case "Receptionist":
           router.push("/dashboard");
           break;
 
-        case "Receptionist":
-          router.push("/receptionist");
-          break;
-
         default:
-          setError("Rol de usuario desconocido. Contacta al soporte.");
+          // Error message
+          setStatusMessage({
+            type: "error",
+            message: "Rol de usuario desconocido. Contacta al soporte.",
+          });
+          return;
       }
 
+      // Success message
       setStatusMessage({
         type: "success",
         message: "Inicio de sesión exitoso. Redirigiendo...",
       });
     } catch (error) {
+      // Unauthorized
       if (error.response && error.response.status === 401) {
         setStatusMessage({
           type: "error",
           message: "Credenciales incorrectas. Por favor, inténtalo de nuevo.",
         });
       } else {
+        // Handle another error message
         setStatusMessage({
           type: "error",
           message: "Error al iniciar sesión. Por favor, inténtalo de nuevo.",
@@ -122,6 +136,18 @@ export default function LoginPage() {
             />
           </div>
 
+          {statusMessage.message && (
+            <div
+              className={`mb-4 p-3 rounded text-sm font-medium ${
+                statusMessage.type === "error"
+                  ? "bg-red-50 text-red-600 border border-red-200"
+                  : "bg-green-50 text-green-700 border border-green-200"
+              }`}
+            >
+              {statusMessage.message}
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
@@ -132,9 +158,15 @@ export default function LoginPage() {
           </button>
 
           {/* Register Link */}
-          <button className="w-full mt-4 text-center text-sm text-gray-600 hover:text-gray-800">
-            <Link href="/register">¿No tienes una cuenta? Regístrate</Link>
-          </button>
+          <div className="mt-6 text-center text-sm text-gray-600">
+            ¿No tienes una cuenta?{" "}
+            <Link
+              href="/register"
+              className="text-blue-500 font-semibold hover:text-blue-600 hover:underline transition-colors"
+            >
+              Regístrate
+            </Link>
+          </div>
         </form>
       </div>
     </div>
