@@ -2,16 +2,24 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import BookingModal from "./BookingModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function DoctorsView() {
+  const { user } = useAuth();
+
+  // Data
   const [doctors, setDoctors] = useState([]);
+  const [patients, setPatients] = useState([]);
+
+  // Control
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState("");
 
-  // Booking states
+  // Booking
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [appointmentDate, setAppointmentDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedTime, setSelectedTime] = useState("");
@@ -32,7 +40,20 @@ export default function DoctorsView() {
       }
     };
     fetchDoctors();
-  }, []);
+
+    // Check user role for get patients data
+    if (user?.role === "Receptionist") {
+      const fetchPatients = async () => {
+        try {
+          const response = await api.get("/Patients/GetPatients");
+          setPatients(response.data);
+        } catch (error) {
+          console.error("Error cargando pacientes:", error);
+        }
+      };
+      fetchPatients();
+    }
+  }, [user]); // Fetch when user changes
 
   // Open booking modal for a selected doctor and reset booking states
   const openingBookingModal = (doctor) => {
@@ -40,6 +61,8 @@ export default function DoctorsView() {
     setAppointmentDate("");
     setAvailableSlots([]);
     setSelectedTime("");
+    setSelectedPatientId("");
+    setBookingStatus("");
     setModalOpen(true);
   };
 
@@ -77,6 +100,11 @@ export default function DoctorsView() {
     // Check if all required fields are filled
     if (!selectedDoctor || !appointmentDate || !selectedTime) return;
 
+    if (user?.role === "Receptionist" && !selectedPatientId) {
+      setBookingStatus("Por favor selecciona un paciente.");
+      return;
+    }
+
     setBooking(true);
     setBookingStatus("");
 
@@ -85,10 +113,16 @@ export default function DoctorsView() {
 
     try {
       // Call the API to create the appointment
-      await api.post("/Appointments", {
+      const payload = {
         doctorId: selectedDoctor.id,
         appointmentDate: combinedDateTime,
-      });
+      };
+
+      if (user?.role === "Receptionist") {
+        payload.patientId = parseInt(selectedPatientId);
+      }
+      await api.post("/Appointments", payload);
+
       setBookingStatus("¡Turno agendado con éxito!");
       setTimeout(() => setModalOpen(false), 2000);
     } catch (error) {
@@ -158,6 +192,10 @@ export default function DoctorsView() {
           onDateChange={handleDateChange}
           onSelectTime={setSelectedTime}
           onSubmit={handleCreateAppointment}
+          userRole={user?.role}
+          patients={patients}
+          selectedPatientId={selectedPatientId}
+          onSelectPatient={setSelectedPatientId}
         />
       )}
     </div>
