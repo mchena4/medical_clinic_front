@@ -8,6 +8,8 @@ import DoctorsView from "../../components/DoctorsView";
 import PersonalData from "../../components/PersonalData";
 import DoctorAppointmentsView from "@/components/DoctorAppointmentsView";
 import PatientsSearchView from "@/components/PatientsSearchView";
+import AllAppointmentsView from "@/components/AllAppointmets";
+
 // Auth context
 import { useAuth } from "@/context/AuthContext";
 
@@ -45,6 +47,9 @@ export default function DashboardPage() {
         return <DoctorAppointmentsView />;
       case "search-patients":
         return <PatientsSearchView />;
+      // Receptionist view
+      case "all-appointments":
+        return <AllAppointmentsView />;
     }
   };
 
