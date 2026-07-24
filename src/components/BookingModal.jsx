@@ -11,8 +11,18 @@ export default function BookingModal({
   onDateChange,
   onSelectTime,
   onSubmit,
+  userRole,
+  patients,
+  selectedPatientId,
+  onSelectPatient,
 }) {
   const isSuccess = bookingStatus.includes("éxito");
+
+  // Confirm status
+  const isConfirmDisabled =
+    !selectedTime ||
+    booking ||
+    (userRole === "Receptionist" && !selectedPatientId);
 
   return (
     <div
@@ -58,6 +68,28 @@ export default function BookingModal({
           onSubmit={onSubmit}
           className="px-6 pt-5 pb-6 flex flex-col gap-5"
         >
+          {/* Select Patient (Receptionist role)*/}
+          {userRole === "Receptionist" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-slate-700">
+                Seleccionar Paciente
+              </label>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => onSelectPatient(e.target.value)}
+                required
+                className="px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 outline-none font-sans bg-white focus:border-sky-500"
+              >
+                <option disabled>-- Elija un paciente --</option>
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.firstName} {p.lastName} (DNI: {p.dni})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Date picker */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-slate-700">
@@ -124,12 +156,12 @@ export default function BookingModal({
             {/* Confirm button */}
             <button
               type="submit"
-              disabled={!selectedTime || booking}
-              className={`px-5 py-2.5 text-white text-sm font-semibold rounded-lg border-0 transition-opacity
+              disabled={isConfirmDisabled}
+              className={`px-5 py-2.5 text-white text-sm font-semibold rounded-lg transition-colors
               ${
-                !selectedTime || booking
-                  ? "opacity-50 cursor-not-allowed"
-                  : "opacity-100 cursor-pointer bg-teal-500 hover:bg-teal-600"
+                isConfirmDisabled
+                  ? "opacity-50 cursor-not-allowed bg-sky-600"
+                  : "cursor-pointer bg-sky-600 hover:bg-sky-700"
               }`}
             >
               {booking ? "Agendando…" : "Confirmar turno"}
