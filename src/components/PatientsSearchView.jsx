@@ -50,7 +50,7 @@ export default function PatientsSearchView() {
           placeholder="Buscar por nombre, apellido o DNI..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 shadow-sm"
+          className="w-full px-4 py-3 border border-slate-200 rounded-lg outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 shadow-sm text-slate-800"
         />
       </div>
 
